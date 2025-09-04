@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hisse Derinlik Tablosu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .market-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .info-card h3 {
+            margin-bottom: 10px;
+            color: #ffeb3b;
+        }
+
+        .price {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .positive { color: #4caf50; }
+        .negative { color: #f44336; }
+
+        .depth-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .depth-side {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .depth-title {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .buy-side .depth-title { color: #4caf50; }
+        .sell-side .depth-title { color: #f44336; }
+
+        .depth-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .depth-table th {
+            padding: 10px 5px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            font-size: 0.9em;
+            text-align: right;
+        }
+
+        .depth-table td {
+            padding: 8px 5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85em;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        .buy-row { background: rgba(76, 175, 80, 0.1); }
+        .sell-row { background: rgba(244, 67, 54, 0.1); }
+
+        .buy-row:hover { background: rgba(76, 175, 80, 0.2); }
+        .sell-row:hover { background: rgba(244, 67, 54, 0.2); }
+
+        .refresh-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 30px;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .last-update {
+            text-align: center;
+            margin-top: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .depth-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Hisse Derinlik Tablosu</h1>
+        
+        <div class="market-info">
+            <div class="info-card">
+                <h3>Hisse Adı</h3>
+                <div class="price">EXAMPLE</div>
+            </div>
+            <div class="info-card">
+                <h3>Son Fiyat</h3>
+                <div class="price positive" id="lastPrice">25.75 ₺</div>
+            </div>
+            <div class="info-card">
+                <h3>Değişim</h3>
+                <div class="price positive" id="change">+0.85 (+3.41%)</div>
+            </div>
+            <div class="info-card">
+                <h3>Hacim</h3>
+                <div class="price">1.234.567</div>
+            </div>
+        </div>
+
+        <div class="depth-container">
+            <div class="depth-side buy-side">
+                <div class="depth-title">📈 ALIŞ EMİRLERİ</div>
+                <table class="depth-table">
+                    <thead>
+                        <tr>
+                            <th>Miktar</th>
+                            <th>Fiyat</th>
+                            <th>Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody id="buyOrders">
+                        <tr class="buy-row">
+                            <td>15.000</td>
+                            <td>25.70</td>
+                            <td>385.500</td>
+                        </tr>
+                        <tr class="buy-row">
+                            <td>22.500</td>
+                            <td>25.65</td>
+                            <td>577.125</td>
+                        </tr>
+                        <tr class="buy-row">
+                            <td>8.750</td>
+                            <td>25.60</td>
+                            <td>224.000</td>
+                        </tr>
+                        <tr class="buy-row">
+                            <td>31.200</td>
+                            <td>25.55</td>
+                            <td>797.160</td>
+                        </tr>
+                        <tr class="buy-row">
+                            <td>12.800</td>
+                            <td>25.50</td>
+                            <td>326.400</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="depth-side sell-side">
+                <div class="depth-title">📉 SATIŞ EMİRLERİ</div>
+                <table class="depth-table">
+                    <thead>
+                        <tr>
+                            <th>Miktar</th>
+                            <th>Fiyat</th>
+                            <th>Toplam</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sellOrders">
+                        <tr class="sell-row">
+                            <td>18.500</td>
+                            <td>25.80</td>
+                            <td>477.300</td>
+                        </tr>
+                        <tr class="sell-row">
+                            <td>25.000</td>
+                            <td>25.85</td>
+                            <td>646.250</td>
+                        </tr>
+                        <tr class="sell-row">
+                            <td>9.200</td>
+                            <td>25.90</td>
+                            <td>238.280</td>
+                        </tr>
+                        <tr class="sell-row">
+                            <td>33.750</td>
+                            <td>25.95</td>
+                            <td>875.813</td>
+                        </tr>
+                        <tr class="sell-row">
+                            <td>16.400</td>
+                            <td>26.00</td>
+                            <td>426.400</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <button class="refresh-btn" onclick="refreshData()">🔄 Verileri Yenile</button>
+        
+        <div class="last-update">
+            Son Güncelleme: <span id="lastUpdateTime">04.09.2025 14:30:15</span>
+        </div>
+    </div>
+
+    <script>
+        let currentStock = 'AKBNK.IS';
+        let stockData = {};
+
+        // Yahoo Finance API proxy (CORS sorunu için)
+        const API_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart/';
+        
+        async function fetchStockData(symbol) {
+            try {
+                const response = await fetch(`${API_BASE}${symbol}`);
+                const data = await response.json();
+                
+                if (data.chart && data.chart.result && data.chart.result[0]) {
+                    const result = data.chart.result[0];
+                    const meta = result.meta;
+                    const quote = result.indicators.quote[0];
+                    
+                    return {
+                        symbol: meta.symbol,
+                        price: meta.regularMarketPrice,
+                        change: meta.regularMarketPrice - meta.previousClose,
+                        changePercent: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100,
+                        volume: meta.regularMarketVolume,
+                        previousClose: meta.previousClose
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('API Hatası:', error);
+                return null;
+            }
+        }
+
+        async function updateStockInfo() {
+            const stockSelect = document.getElementById('stockSelect');
+            const loadingElements = ['lastPrice', 'change', 'volume'];
+            
+            // Loading durumu
+            loadingElements.forEach(id => {
+                document.getElementById(id).innerHTML = 'Yükleniyor...';
+                document.getElementById(id).classList.add('loading');
+            });
+
+            const data = await fetchStockData(currentStock);
+            
+            if (data) {
+                // Hisse adını güncelle
+                document.getElementById('stockName').textContent = data.symbol.replace('.IS', '');
+                
+                // Fiyat bilgilerini güncelle
+                document.getElementById('lastPrice').innerHTML = `${data.price.toFixed(2)} ₺`;
+                document.getElementById('lastPrice').className = 'price ' + (data.change >= 0 ? 'positive' : 'negative');
+                
+                // Değişim bilgisini güncelle
+                const changeText = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)} (${data.changePercent >= 0 ? '+' : ''}${data.changePercent.toFixed(2)}%)`;
+                document.getElementById('change').innerHTML = changeText;
+                document.getElementById('change').className = 'price ' + (data.change >= 0 ? 'positive' : 'negative');
+                
+                // Hacim bilgisini güncelle
+                document.getElementById('volume').innerHTML = data.volume.toLocaleString('tr-TR');
+                
+                stockData = data;
+            } else {
+                // Hata durumu
+                ['lastPrice', 'change', 'volume'].forEach(id => {
+                    document.getElementById(id).innerHTML = 'Veri alınamadı';
+                    document.getElementById(id).className = 'price error';
+                });
+            }
+            
+            // Loading durumunu kaldır
+            loadingElements.forEach(id => {
+                document.getElementById(id).classList.remove('loading');
+            });
+        }
+
+        function changeStock() {
+            const stockSelect = document.getElementById('stockSelect');
+            currentStock = stockSelect.value;
+            updateStockInfo();
+            generateDepthData(); // Derinlik verisini de güncelle
+        }
+
+        function generateDepthData() {
+            if (!stockData.price) return;
+            
+            const basePrice = stockData.price;
+            const buyOrders = document.getElementById('buyOrders');
+            const sellOrders = document.getElementById('sellOrders');
+            
+            // Alış emirleri (mevcut fiyattan düşük)
+            let buyHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const price = (basePrice - (i + 1) * 0.05).toFixed(2);
+                const quantity = Math.floor(Math.random() * 50000 + 10000);
+                const total = (price * quantity).toFixed(0);
+                
+                buyHTML += `
+                    <tr class="buy-row">
+                        <td>${quantity.toLocaleString('tr-TR')}</td>
+                        <td>${price}</td>
+                        <td>${parseInt(total).toLocaleString('tr-TR')}</td>
+                    </tr>
+                `;
+            }
+            buyOrders.innerHTML = buyHTML;
+            
+            // Satış emirleri (mevcut fiyattan yüksek)
+            let sellHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const price = (basePrice + (i + 1) * 0.05).toFixed(2);
+                const quantity = Math.floor(Math.random() * 50000 + 10000);
+                const total = (price * quantity).toFixed(0);
+                
+                sellHTML += `
+                    <tr class="sell-row">
+                        <td>${quantity.toLocaleString('tr-TR')}</td>
+                        <td>${price}</td>
+                        <td>${parseInt(total).toLocaleString('tr-TR')}</td>
+                    </tr>
+                `;
+            }
+            sellOrders.innerHTML = sellHTML;
+        }
+
+        function refreshData() {
+            updateStockInfo();
+            
+            // Butona geçici efekt
+            const btn = document.querySelector('.refresh-btn');
+            btn.innerHTML = '⏳ Güncelleniyor...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                generateDepthData();
+                document.getElementById('lastUpdateTime').textContent = new Date().toLocaleString('tr-TR');
+                btn.innerHTML = '🔄 Verileri Yenile';
+                btn.disabled = false;
+            }, 1500);
+        }
+
+        // Otomatik güncelleme (her 30 saniyede bir)
+        setInterval(() => {
+            updateStockInfo();
+        }, 30000);
+        
+        // Sayfa yüklendiğinde ilk veri çekme
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStockInfo();
+            setTimeout(() => {
+                if (stockData.price) {
+                    generateDepthData();
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
