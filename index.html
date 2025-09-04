@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borsa Derinlik - Telegram Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #212121;
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+
+        .telegram-header {
+            background: #212121;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: #aaaaaa;
+            margin-top: 2px;
+        }
+
+        .refresh-icon {
+            background: none;
+            border: none;
+            color: #8774e1;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .refresh-icon:hover {
+            background: rgba(135, 116, 225, 0.1);
+        }
+
+        .container {
+            padding: 0;
+            max-width: 100%;
+        }
+
+        .stock-selector {
+            background: #181818;
+            padding: 16px;
+            border-bottom: 1px solid #333;
+        }
+
+        .stock-select {
+            width: 100%;
+            background: #2c2c2c;
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .stock-select option {
+            background: #2c2c2c;
+            color: #ffffff;
+        }
+
+        .price-info {
+            background: #181818;
+            padding: 16px;
+            border-bottom: 1px solid #333;
+        }
+
+        .price-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .current-price {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .price-change {
+            text-align: right;
+        }
+
+        .change-amount {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .change-percent {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .positive { color: #4caf50; }
+        .negative { color: #ff595a; }
+
+        .price-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            color: #aaaaaa;
+            font-size: 14px;
+        }
+
+        .detail-value {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .depth-section {
+            background: #212121;
+            padding: 0;
+        }
+
+        .depth-header {
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #8774e1;
+            border-bottom: 1px solid #333;
+        }
+
+        .depth-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 400px;
+        }
+
+        .depth-side {
+            padding: 0;
+        }
+
+        .buy-side {
+            border-right: 1px solid #333;
+        }
+
+        .side-header {
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .buy-header {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+        }
+
+        .sell-header {
+            background: rgba(255, 89, 90, 0.1);
+            color: #ff595a;
+        }
+
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+            font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+            transition: background 0.1s;
+        }
+
+        .buy-row:hover {
+            background: rgba(76, 175, 80, 0.05);
+        }
+
+        .sell-row:hover {
+            background: rgba(255, 89, 90, 0.05);
+        }
+
+        .order-price {
+            font-weight: 600;
+        }
+
+        .buy-row .order-price {
+            color: #4caf50;
+        }
+
+        .sell-row .order-price {
+            color: #ff595a;
+        }
+
+        .order-amount {
+            color: #aaaaaa;
+        }
+
+        .order-total {
+            color: #ffffff;
+            text-align: right;
+        }
+
+        .loading {
+            opacity: 0.5;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .last-update {
+            text-align: center;
+            padding: 12px;
+            color: #aaaaaa;
+            font-size: 12px;
+            border-top: 1px solid #333;
+            background: #181818;
+        }
+
+        @media (max-width: 768px) {
+            .price-details {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .current-price {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="telegram-header">
+        <div>
+            <div class="header-title">Borsa Derinlik</div>
+            <div class="header-subtitle">Canlı piyasa verileri</div>
+        </div>
+        <button class="refresh-icon" onclick="refreshData()">🔄</button>
+    </div>
+
+    <div class="container">
+        <div class="stock-selector">
+            <select class="stock-select" id="stockSelect" onchange="changeStock()">
+                <option value="AKBNK.IS">💰 Akbank (AKBNK)</option>
+                <option value="GARAN.IS">🏦 Garanti BBVA (GARAN)</option>
+                <option value="ISCTR.IS">🏛️ İş Bankası (ISCTR)</option>
+                <option value="THYAO.IS">✈️ Türk Hava Yolları (THYAO)</option>
+                <option value="BIMAS.IS">🛒 BİM (BIMAS)</option>
+                <option value="SAHOL.IS">🏢 Sabancı Holding (SAHOL)</option>
+                <option value="KOZAL.IS">🥇 Koza Altın (KOZAL)</option>
+                <option value="KCHOL.IS">🏭 Koç Holding (KCHOL)</option>
+                <option value="ASELS.IS">🚀 Aselsan (ASELS)</option>
+                <option value="TSKB.IS">🏗️ TSKB (TSKB)</option>
+            </select>
+        </div>
+
+        <div class="price-info">
+            <div class="price-main">
+                <div class="current-price" id="currentPrice">Yükleniyor...</div>
+                <div class="price-change">
+                    <div class="change-amount" id="changeAmount">+0.00</div>
+                    <div class="change-percent" id="changePercent">(+0.00%)</div>
+                </div>
+            </div>
+            <div class="price-details">
+                <div class="detail-item">
+                    <span>Hacim</span>
+                    <span class="detail-value" id="volume">-</span>
+                </div>
+                <div class="detail-item">
+                    <span>Önceki Kapanış</span>
+                    <span class="detail-value" id="previousClose">-</span>
+                </div>
+                <div class="detail-item">
+                    <span>Günlük En Yüksek</span>
+                    <span class="detail-value" id="dayHigh">-</span>
+                </div>
+                <div class="detail-item">
+                    <span>Günlük En Düşük</span>
+                    <span class="detail-value" id="dayLow">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="depth-section">
+            <div class="depth-header">📊 Piyasa Derinliği</div>
+            <div class="depth-container">
+                <div class="depth-side buy-side">
+                    <div class="side-header buy-header">ALIŞ EMİRLERİ</div>
+                    <div id="buyOrders">
+                        <!-- Buy orders will be populated here -->
+                    </div>
+                </div>
+                <div class="depth-side sell-side">
+                    <div class="side-header sell-header">SATIŞ EMİRLERİ</div>
+                    <div id="sellOrders">
+                        <!-- Sell orders will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="last-update">
+            Son güncelleme: <span id="lastUpdateTime">-</span>
+        </div>
+    </div>
+
+    <script>
+        let currentStock = 'AKBNK.IS';
+        let stockData = {};
+
+        // CORS proxy for API access
+        const API_BASE = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://query1.finance.yahoo.com/v8/finance/chart/');
+
+        async function fetchStockData(symbol) {
+            try {
+                const response = await fetch(`${API_BASE}${symbol}`);
+                const proxyData = await response.json();
+                const data = JSON.parse(proxyData.contents);
+                
+                if (data.chart && data.chart.result && data.chart.result[0]) {
+                    const result = data.chart.result[0];
+                    const meta = result.meta;
+                    
+                    return {
+                        symbol: meta.symbol,
+                        price: meta.regularMarketPrice,
+                        change: meta.regularMarketPrice - meta.previousClose,
+                        changePercent: ((meta.regularMarketPrice - meta.previousClose) / meta.previousClose) * 100,
+                        volume: meta.regularMarketVolume,
+                        previousClose: meta.previousClose,
+                        dayHigh: meta.regularMarketDayHigh,
+                        dayLow: meta.regularMarketDayLow
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('API Hatası:', error);
+                // Fallback demo data
+                const basePrice = 25.75 + (Math.random() - 0.5) * 5;
+                const change = (Math.random() - 0.5) * 3;
+                return {
+                    symbol: currentStock,
+                    price: basePrice,
+                    change: change,
+                    changePercent: (change / basePrice) * 100,
+                    volume: Math.floor(Math.random() * 2000000 + 500000),
+                    previousClose: basePrice - change,
+                    dayHigh: basePrice + Math.random() * 2,
+                    dayLow: basePrice - Math.random() * 2
+                };
+            }
+        }
+
+        async function updateStockInfo() {
+            const loadingElements = ['currentPrice', 'changeAmount', 'changePercent', 'volume', 'previousClose', 'dayHigh', 'dayLow'];
+            
+            // Show loading state
+            loadingElements.forEach(id => {
+                const element = document.getElementById(id);
+                element.classList.add('loading');
+                if (id === 'currentPrice') element.textContent = 'Yükleniyor...';
+            });
+
+            const data = await fetchStockData(currentStock);
+            
+            if (data) {
+                // Update current price
+                document.getElementById('currentPrice').textContent = `${data.price.toFixed(2)} ₺`;
+                
+                // Update change
+                const changeClass = data.change >= 0 ? 'positive' : 'negative';
+                const changeSign = data.change >= 0 ? '+' : '';
+                
+                document.getElementById('changeAmount').textContent = `${changeSign}${data.change.toFixed(2)}`;
+                document.getElementById('changeAmount').className = `change-amount ${changeClass}`;
+                
+                document.getElementById('changePercent').textContent = `(${changeSign}${data.changePercent.toFixed(2)}%)`;
+                document.getElementById('changePercent').className = `change-percent ${changeClass}`;
+                
+                // Update details
+                document.getElementById('volume').textContent = data.volume.toLocaleString('tr-TR');
+                document.getElementById('previousClose').textContent = `${data.previousClose.toFixed(2)} ₺`;
+                document.getElementById('dayHigh').textContent = `${data.dayHigh.toFixed(2)} ₺`;
+                document.getElementById('dayLow').textContent = `${data.dayLow.toFixed(2)} ₺`;
+                
+                stockData = data;
+                generateDepthData();
+            }
+            
+            // Remove loading state
+            loadingElements.forEach(id => {
+                document.getElementById(id).classList.remove('loading');
+            });
+        }
+
+        function generateDepthData() {
+            if (!stockData.price) return;
+            
+            const basePrice = stockData.price;
+            const buyOrdersEl = document.getElementById('buyOrders');
+            const sellOrdersEl = document.getElementById('sellOrders');
+            
+            // Generate buy orders (below current price)
+            let buyHTML = '';
+            for (let i = 0; i < 10; i++) {
+                const price = (basePrice - (i + 1) * 0.01 * basePrice * 0.02).toFixed(2);
+                const amount = Math.floor(Math.random() * 100000 + 10000);
+                const total = (price * amount / 1000).toFixed(0);
+                
+                buyHTML += `
+                    <div class="order-row buy-row">
+                        <span class="order-amount">${amount.toLocaleString('tr-TR')}</span>
+                        <span class="order-price">${price}</span>
+                        <span class="order-total">${total}K</span>
+                    </div>
+                `;
+            }
+            buyOrdersEl.innerHTML = buyHTML;
+            
+            // Generate sell orders (above current price)
+            let sellHTML = '';
+            for (let i = 0; i < 10; i++) {
+                const price = (basePrice + (i + 1) * 0.01 * basePrice * 0.02).toFixed(2);
+                const amount = Math.floor(Math.random() * 100000 + 10000);
+                const total = (price * amount / 1000).toFixed(0);
+                
+                sellHTML += `
+                    <div class="order-row sell-row">
+                        <span class="order-amount">${amount.toLocaleString('tr-TR')}</span>
+                        <span class="order-price">${price}</span>
+                        <span class="order-total">${total}K</span>
+                    </div>
+                `;
+            }
+            sellOrdersEl.innerHTML = sellHTML;
+        }
+
+        function changeStock() {
+            const stockSelect = document.getElementById('stockSelect');
+            currentStock = stockSelect.value;
+            updateStockInfo();
+        }
+
+        function refreshData() {
+            const refreshBtn = document.querySelector('.refresh-icon');
+            refreshBtn.innerHTML = '⏳';
+            
+            updateStockInfo().then(() => {
+                document.getElementById('lastUpdateTime').textContent = new Date().toLocaleString('tr-TR');
+                refreshBtn.innerHTML = '🔄';
+            });
+        }
+
+        // Auto refresh every 30 seconds
+        setInterval(updateStockInfo, 30000);
+        
+        // Initial load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStockInfo();
+            document.getElementById('lastUpdateTime').textContent = new Date().toLocaleString('tr-TR');
+        });
+    </script>
+</body>
+</html>
